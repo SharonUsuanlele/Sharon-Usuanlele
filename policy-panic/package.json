@@ -1,0 +1,11 @@
+{
+  "name": "policy-panic",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Policy Panic: a mobile-first political life RPG set in a fictional Nigeria.",
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "test": "node --test test/*.test.js"
+  }
+}
