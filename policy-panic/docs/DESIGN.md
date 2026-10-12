@@ -2,18 +2,21 @@
 
 A mobile-first political life RPG in a fictional Nigeria. Win power, keep it, try to stay clean.
 
-## Status of the two guiding repos
+## How the two guiding repos were used
 
-Neither **Ponytail** nor **UI/UX Pro Max** was installed in this environment, so neither was run as a tool. Their published READMEs were read and their principles applied by hand:
+Both repos were inspected (shallow read-only clones outside the project, nothing installed globally) and their instructions followed.
 
-- *Ponytail*: write only what the task needs. No dependencies, no build step, no framework. Never cut validation, security or accessibility.
-- *UI/UX Pro Max*: choose a style deliberately, define tokens and semantics before screens, check contrast, touch targets, focus, reduced motion, states.
-
-To install them yourself: `/plugin marketplace add DietrichGebert/ponytail` then `/plugin install ponytail@ponytail`; and `/plugin install ui-ux-pro-max@ui-ux-pro-max-skill` (or `npm i -g ui-ux-pro-max-cli && uipro init --ai claude`). Not done here because installs are global.
+- **Ponytail** (`DietrichGebert/ponytail`): its documented setup for agents without a plugin system is to copy `AGENTS.md` into the project, which is now `policy-panic/AGENTS.md`. Its ladder (does it need to exist, reuse what exists, platform feature, minimum code, one small test for logic) drove the choices here: no framework or dependencies, one rules engine instead of per-screen logic, new systems added as data plus one `systems()` function, a test for every new rule. The `/plugin` slash-command install is interactive and was not run.
+- **UI/UX Pro Max** (`nextlevelbuilder/ui-ux-pro-max-skill`): its `search.py` was run (stdlib only, no network calls, checked first) for a design system and for the style, UX and chart domains. What it said and what was done:
+  - Its generic design-system output was landing-page oriented (Swiss minimalism), which is the wrong product type for a game, so it was not adopted. Its typography mood ("bold editorial, poster, near-black, vermillion") matches the direction already chosen.
+  - *Don't convey information by colour alone*: meters already show numbers; the country view now adds a text band (Low / Fair / Good, or High / Moderate / Low for bad-when-high measures) beside every coloured bar.
+  - *Label every range; show number and target beside the gauge*: done on every indicator row.
+  - *Touch targets 44-48px with 8px gaps*: all controls are 44px+ with at least 10px gaps.
+  - *Parallax storytelling* was rejected: its own data marks it high cost and high accessibility risk, wrong for low-end phones on slow data.
 
 ## Stack and why
 
-Vanilla ES modules, static files, `localStorage`, a tiny service worker. Cold load is about 160 KB unminified (roughly 40 KB gzipped) with no images or fonts, and it works offline. The repo was empty, so there was nothing to preserve; this is the smallest thing that does the job.
+Vanilla ES modules, static files, `localStorage`, a tiny service worker. Cold load is about 205 KB unminified (roughly 55 KB gzipped) with no images or fonts, and it works offline. The repo was empty, so there was nothing to preserve; this is the smallest thing that does the job.
 
 ```
 index.html        shell
@@ -22,7 +25,7 @@ js/content.js     all fictional content as data (origins, events, moves, outcome
 js/engine.js      pure rules engine (no DOM). The only place consequences are computed
 js/art.js         inline SVG: hero, avatars, scene banners, icons
 js/app.js         UI: renders engine state, routes taps to engine calls
-test/engine.test.js   node --test (15 tests)
+test/*.test.js        node --test (30 tests)
 ```
 
 Run: `npm start` (serves on :8080), `npm test`.
@@ -108,6 +111,34 @@ Rules in one place: `engine.js`. A choice is data: `{cost, req, fx, roll, after,
 
 `ticketScore` (loyalty, influence, patron and chairman trust, grudges) decides **secure / contested / denied**. The result is `44 + factors` vs `54 + 3 × tier + noise`; factors are popularity, local record, reputation, scandal, party machine, ward agents, media, handouts (raises exposure, may leak), endorsements, incumbency. The result screen lists the factors. Losing an incumbent seat sends you to "former X" with a path back. Sim calibration: a diligent bot wins about 85% of races; a passive player loses.
 
+## Country systems (added for the "whole country" brief)
+
+The player still starts small (ward, councillor) and climbs to President; every decision ripples into the country in proportion to the office held (`nf()` scales effects: 0.3x for a community figure up to 1.2x for a president).
+
+**Eight ways ordinary people live** (tracked for the player's ward *and* the country): jobs & incomes, food affordability, electricity, healthcare, education, roads & transport, land & housing security, environment. **Seven national measures**: government money, resource income, public debt, foreign dependence, public trust, political stability, courts & watchdogs. **Personal wealth** is separate. Nothing is decorative; each one does something:
+
+| Measure | What it does in the game |
+|---|---|
+| Government money | Sets the size of every public budget (0.6x to 1.4x). Fed by resource income, drained by debt and foreign dependence. |
+| Resource income | Fills government money. If courts & watchdogs are weak, part leaks, trust falls, and the press writes "revenue is up but people see no change". |
+| Public debt / Foreign dependence | Drain government money; foreign dependence lowers the odds of winning negotiations; both are raised by loans and foreign deals and paid back later. |
+| Environment | Below 40, pollution slowly cuts health, food and jobs. Oil projects erode it unless safeguards were negotiated. Low environment triggers pollution protests. |
+| Food affordability | Below 35 it drags stability down; price spikes are a recurring event. |
+| Land & housing security | Evictions lower it, fuel court cases, and are remembered at election time. |
+| Political stability | Follows living conditions and trust. Low stability triggers protests more often and punishes you at the polls. |
+| Jobs, power, health, education, transport | Feed support, stability, events and election "record in office". |
+| Public trust, courts & watchdogs | Shape negotiation odds, probes, cover-ups, and how much ordinary reforms are believed. |
+
+**Country dashboard.** A landscape that changes with conditions (lights on or off, smoke and haze, farmland green or brown, clean or poisoned river, crowds with placards when stability is low, an oil derrick if drilling), a card "Who is actually doing well?" comparing the government, resource income, you personally and ordinary people with a one-line verdict, then grouped rows. **Tap any row** for what it means, why it matters, and the last few things that moved it.
+
+**Land and law.** Each region has a customary land-title strength. It changes how often families win in court and what a public hearing finds. Outcomes also depend on compensation, consultation, institutions and negotiating skill; there is no single "right" button.
+
+**New stories (15):** The Oil Expansion (approve / renegotiate / delay), Meridian Comes Back, The Creek Turns Black, A Giant Oil Field (auction / local refining / state company), The Industrial Park (evictions), Families Take You to Court, Food Prices Jump, The Factory May Close, The Hospital Runs Out, Dead Fish on the Road, A Big Foreign Loan, The Foreign Company Wants Better Terms, A Generous Donor, Dr. Reis Calls, A Reporter Is Digging (which cites whichever earlier decision you made). Most have three choices, and about two thirds have uncertain or delayed outcomes; follow-ups are scheduled in `queue`.
+
+**Career.** Community figure, party organiser, councillor, LG chairperson, state assembly, governor, federal legislator, senator, president (age 40+, from governor or senator). Non-linear (`from` lists). A "play style" label (patronage builder, deal-maker, public servant, pragmatist) is derived from obligations, wealth, reputation and exposure.
+
+Saves from before this change (version 1) cannot be read by this version.
+
 ## Multiplayer and shared world: not implemented
 
 Fake multiplayer is not presented as real. The UI says "Offline world".
@@ -128,8 +159,10 @@ What a real version needs:
 4. **Negative values rendered `→ -5` and fractional stats leaked (−0.9009…) and caused horizontal overflow at 360px.** Fixed: stats rounded in the engine; flex rows made overflow-safe. Found by browser testing, not by eye.
 5. **Dock plus tab bar consumed about 140px.** Slimmed to 56px tabs.
 
-Remaining known weaknesses (not fixed): no first-run coaching beyond `?` chips; NPCs have initials, not portraits; decision text is long for one-handed reading; only about 25 events so repeat play will show repetition; sound is just beeps; Back-button handling is only wired for tabs.
+Second review pass (country update): the decision banner cropped its icon on narrow screens (fixed); probe and godfather-call events fired too often for players who pile up obligations (cooldowns added); the high-office events were nearly unreachable (weights raised). A 140-game bot sweep confirms all 30 non-intro events can occur.
+
+Remaining known weaknesses (not fixed): no first-run coaching beyond `?` chips; NPCs have initials, not portraits; decision text is long for one-handed reading; 39 events, so long careers will still repeat; sound is just beeps; Back-button handling is only wired for tabs.
 
 ## Test status
 
-`npm test`: 15 engine tests pass (setup, effects, invalid actions, cost checks, moves/time, money separation, three delayed consequences, seeded determinism, probe to court, election eligibility/ticket/campaign/result, defeat path, save validation, 40-quarter bot run). In-browser (Chromium, 360×740 and 390×844 touch emulation): full run through character creation, decisions, moves, 51 quarters, two elections, reload with identical restored state, no console errors, no horizontal overflow. Not tested: real devices, screen readers, Safari, slow-network behaviour of the service worker.
+`npm test`: 30 tests pass. Engine basics (setup, invalid actions, costs, moves/time, money separation, delayed consequences, determinism, probe to court, elections, defeat, save validation, 40-quarter bot run) plus the country systems (oil approve/delay/renegotiate odds by skill and institutions, land outcomes by region title, resource money without better lives, pollution drift with recorded causes, foreign loan repayment squeeze, donor obligations, press citing earlier decisions, elections remembering land/food/environment, President eligibility). In-browser (Chromium, 360×740 and 390×844 touch emulation): full run through character creation, decisions, moves, 51 quarters, two elections, reload with identical restored state, no console errors, no horizontal overflow. Not tested: real devices, screen readers, Safari, slow-network behaviour of the service worker.

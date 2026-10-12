@@ -9,8 +9,27 @@ export const N = n => {
   return sgn + '₦' + t;
 };
 
-export const IND = { power: 'Electricity', jobs: 'Jobs', health: 'Healthcare', edu: 'Education', transport: 'Transport', debt: 'Public debt', trust: 'Public trust', inst: 'Institutions' };
-export const SERVICES = ['power', 'jobs', 'health', 'edu', 'transport'];
+export const IND = { power: 'Electricity', jobs: 'Jobs & incomes', health: 'Healthcare', edu: 'Education', transport: 'Roads & transport', food: 'Food affordability', land: 'Land & housing security', env: 'Environment', debt: 'Public debt', trust: 'Public trust', inst: 'Courts & watchdogs', gov: 'Government money', resinc: 'Resource income', foreign: 'Foreign dependence', stab: 'Political stability' };
+// How people live. Used for both the ward (local) and the country (nation).
+export const SERVICES = ['jobs', 'food', 'power', 'health', 'edu', 'transport', 'land', 'env'];
+// [what it is, why it matters in the game]
+export const IND_INFO = {
+  jobs: ['How many people earn a decent living.', 'Low jobs fuel protests and cost you votes.'],
+  food: ['Whether ordinary families can afford food. High means affordable.', 'Expensive food causes anger and unrest quickly.'],
+  power: ['How reliable the electricity is.', 'Blackouts hurt businesses, jobs and mood.'],
+  health: ['Whether clinics and hospitals actually work.', 'Sick communities lose faith in their leaders.'],
+  edu: ['Schools, teachers and classrooms.', 'Slow to change, but it shapes jobs over the years.'],
+  transport: ['Roads, buses and how easily goods move.', 'Bad roads push prices up and tempers with them.'],
+  land: ['How safe families are on their homes and farms.', 'Evictions and land grabs fuel protests and court cases.'],
+  env: ['Clean water, soil and air.', 'Pollution makes people ill and ruins farming and fishing.'],
+  debt: ['How much the government owes. High is bad.', 'Debt payments eat into government money.'],
+  trust: ['Whether people believe the government will do what it says.', 'Low trust makes every reform and every election harder.'],
+  inst: ['Courts, watchdogs and honest officials.', 'Strong ones catch cheats and enforce deals. Weak ones let money disappear.'],
+  gov: ['The cash the government has to spend.', 'It sets the size of public budgets. Oil money can raise it without helping anyone.'],
+  resinc: ['What the country earns from oil, gas and minerals.', 'It feeds government money. If institutions are weak, little of it reaches people.'],
+  foreign: ['How much the country depends on foreign lenders and companies. High is risky.', 'It weakens your hand in negotiations.'],
+  stab: ['How calm the country is.', 'Low stability means strikes, protests and voters in a punishing mood.'],
+};
 
 // Quarterly money. fund = typical small fundraising haul; unit = campaign spending scale.
 export const ROLES = [
@@ -22,13 +41,14 @@ export const ROLES = [
   { name: 'Governor', elected: true, salary: 9e6, living: 4e6, budget: 400e6, fund: 40e6, unit: 200e6, minAge: 35, from: [3, 4, 6] },
   { name: 'Federal Legislator', elected: true, salary: 12e6, living: 5e6, budget: 60e6, fund: 8e6, unit: 20e6, minAge: 30, from: [3, 4] },
   { name: 'Senator', elected: true, salary: 15e6, living: 6e6, budget: 80e6, fund: 15e6, unit: 40e6, minAge: 35, from: [5, 6] },
+  { name: 'President', elected: true, salary: 30e6, living: 10e6, budget: 2e9, fund: 80e6, unit: 500e6, minAge: 40, from: [5, 7] },
 ];
 
 export const REGIONS = {
-  marina: { name: 'Marina Coast', ward: 'Idera Ward', blurb: 'Dense, loud, media-hungry. Traffic and traders.', local: { power: 42, jobs: 44, health: 50, edu: 55, transport: 28 } },
-  creeks: { name: 'Delta Creeks', ward: 'Kpomu Creek Ward', blurb: 'Riverine and restless. Big money passes through; little stays.', local: { power: 35, jobs: 30, health: 40, edu: 45, transport: 38 } },
-  plains: { name: 'Savanna Plains', ward: 'Tudun Rai Ward', blurb: 'Farmland and long roads. Clinics are far; elders matter.', local: { power: 30, jobs: 45, health: 35, edu: 38, transport: 30 } },
-  hills: { name: 'Hill Country', ward: 'Gbagba Hill Ward', blurb: 'Mixed communities, farms and mines. Trust is fragile.', local: { power: 48, jobs: 42, health: 45, edu: 50, transport: 40 } },
+  marina: { name: 'Marina Coast', ward: 'Idera Ward', blurb: 'Dense, loud, media-hungry. Traffic and traders.', local: { power: 42, jobs: 44, health: 50, edu: 55, transport: 28, food: 40, land: 45, env: 45 }, title: 55 },
+  creeks: { name: 'Delta Creeks', ward: 'Kpomu Creek Ward', blurb: 'Riverine and restless. Big money passes through; little stays.', local: { power: 35, jobs: 30, health: 40, edu: 45, transport: 38, food: 38, land: 35, env: 28 }, title: 30 },
+  plains: { name: 'Savanna Plains', ward: 'Tudun Rai Ward', blurb: 'Farmland and long roads. Clinics are far; elders matter.', local: { power: 30, jobs: 45, health: 35, edu: 38, transport: 30, food: 45, land: 40, env: 50 }, title: 25 },
+  hills: { name: 'Hill Country', ward: 'Gbagba Hill Ward', blurb: 'Mixed communities, farms and mines. Trust is fragile.', local: { power: 48, jobs: 42, health: 45, edu: 50, transport: 40, food: 48, land: 45, env: 55 }, title: 40 },
 };
 
 export const IDEOLOGIES = {
@@ -50,6 +70,8 @@ export const CAST = {
   family: { name: 'Mama', role: 'Your mother', blurb: 'Proud of you, worried for you, and always asking for something small.' },
   elders: { name: 'Pa Akande', role: "Elders' council", blurb: 'Gives blessings slowly and withdraws them even slower.' },
   lawyer: { name: 'Barr. Ify Nwosu', role: 'Your lawyer', blurb: 'Expensive, discreet, and honest about your chances.' },
+  donor: { name: 'Dr. Tayo Reis', role: 'Businessman and donor', blurb: 'Runs a logistics empire. Generous, and never forgets a favour.' },
+  foreign: { name: 'Helen Marlowe', role: 'Continental Development Bank', blurb: 'Lends big and reads the small print out loud, exactly once.' },
 };
 
 export const WANTS = {
@@ -62,12 +84,18 @@ export const WANTS = {
   family: s => 'Someone in the family always needs school fees.',
   elders: s => 'They want respect and consultation.',
   lawyer: s => s.me.exposure > 30 ? 'She advises you to tidy your records. Quickly.' : 'She is on retainer. Hopefully idle.',
+  donor: s => s.rel.donor.o > 30 ? 'He is waiting for his contract.' : 'He likes people who can be useful.',
+  foreign: s => s.nation.debt > 60 ? 'She wants to talk about repayments.' : 'She has a loan to sell you.',
 };
 
 // ---- helpers used inside content ------------------------------------------------------
 const W = s => REGIONS[s.player.region].ward;
 const ROLE = s => s.office.role;
-const sc = s => [1, 1, 1, 6, 5, 40, 8, 12][ROLE(s)];
+const sc = s => [1, 1, 1, 6, 5, 40, 8, 12, 100][ROLE(s)];
+// Ripple: how much of a country-wide effect a player at this level can really cause.
+const NS = [0.3, 0.3, 0.4, 0.6, 0.8, 1, 1, 1, 1.2];
+const nf = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, s => v * NS[ROLE(s)]]));
+const tl = s => REGIONS[s.player.region].title;
 const eff = s => ROLE(s) >= 2 ? 1 : 0.6;
 const paid = (s, n) => ROLE(s) >= 2 ? { budget: n * sc(s) } : { wealth: n };
 const chk = (s, skill, base, per = 0.05) => Math.max(0.05, Math.min(0.95, base + per * s.me.skills[skill]));
@@ -207,7 +235,7 @@ export const EVENTS = {
   },
   youth_protest: {
     scene: 'megaphone', who: 'Comrade Musa Dauda', title: 'Youths at the Gate',
-    weight: s => ROLE(s) >= 1 && (s.local.jobs < 50 || s.me.support < 35) ? 6 : 0, cooldown: 8,
+    weight: s => ROLE(s) >= 1 && (s.local.jobs < 50 || s.me.support < 35 || s.nation.stab < 35) ? 6 : 0, cooldown: 8,
     body: s => `Two hundred graduates, a bin-lorry and a drum are at the council gate. Comrade Musa reads the placard: "SIX YEARS SINCE NYSC. WHAT ARE YOU DOING?" The crowd is growing.`,
     pressure: 'They are right about the jobs. They are also on camera.',
     choices: [
@@ -222,7 +250,7 @@ export const EVENTS = {
     weight: s => s.q >= 3 ? 3 : 0, cooldown: 12,
     body: s => `Petrol price jumps again. Bus fares double in ${W(s)}. Radio Harmattan phone-ins are full of people asking what their leaders are doing about it.`,
     pressure: 'You didn’t cause this, but you’ll be blamed for it.',
-    effects: { nation: { transport: -5, trust: -3 }, local: { transport: -5 } },
+    effects: { nation: { transport: -5, trust: -3, food: -3 }, local: { transport: -5, food: -3 } },
     choices: [
       ch('Subsidise bus fares for three months', ['money', 'public'], 'Queues shorten. The ward notices who picked up the bill.', { support: 6, local: { transport: 6 } }, { cost: s => paid(s, 1.2e6), lean: 'welfare' }),
       ch('Push the party for relief measures', ['party', 'public'], 'The chairman agrees to a communiqué. Nothing changes, but you are on record.', { loyalty: 3, influence: 3, support: 2, nation: { trust: 1 } }),
@@ -257,7 +285,7 @@ export const EVENTS = {
   },
   patron_calls: {
     scene: 'phone', who: 'Alhaji Bello Yarima', title: 'The Alhaji Calls',
-    weight: s => s.rel.patron.o >= 40 && !s.flags.patronBusy ? 8 : 0, cooldown: 6,
+    weight: s => s.rel.patron.o >= 40 && !s.flags.patronBusy ? 6 : 0, cooldown: 8,
     body: s => `Alhaji Yarima's driver brings an invitation. Over pepper soup, he says: "You remember that thing I did? I need something small." He needs ${s.office.budget > 0 ? 'a ward contract awarded to his cousin’s firm, no questions' : 'your public endorsement of his candidate, no questions'}.`,
     pressure: 'You can’t pay back a godfather with thank-you notes.',
     choices: [
@@ -434,3 +462,241 @@ export const MOVES = {
 };
 
 export const SOURCES = { ledger: 'The Evening Ledger', radio: 'Radio Harmattan', chatter: 'Chatter', official: 'Official Gazette' };
+
+// =====================================================================================
+// Country-level stories: land, resources, foreign influence, survival, ordinary lives.
+// Effects on the nation are scaled by nf(): a councillor ripples less than a governor.
+// =====================================================================================
+const revenue = { in: 2, outcome: 'oil_revenue', hint: 'Money should start reaching the government.' };
+
+Object.assign(EVENTS, {
+  // ---------- natural resources ----------
+  oil_deal: {
+    scene: 'fuel', who: 'Meridian Delta Petroleum', title: 'The Oil Expansion',
+    weight: s => !s.flags.oilLive && !s.flags.oilStalled && !s.flags.oilGone && s.q >= 2 ? 5 : 0, once: true,
+    body: s => `Meridian Delta Petroleum, a foreign-owned company, wants to expand drilling near ${W(s)}, where families live off farming and fishing. It promises jobs and a big payment to the government. ${ROLE(s) >= 4 ? 'The state looks to you for the final yes.' : 'The state will not approve it without local sign-off, and your voice carries weight.'} Residents fear losing land and breathing the smoke.`,
+    pressure: 'The government needs the money. The creek feeds a thousand families.',
+    choices: [
+      ch('Approve it quickly', ['money', 'public', 'law'], 'Meridian is delighted and the first payment lands within weeks. Residents were never asked, and they know it.',
+        { support: -4, rep: -3, rel: { youth: { t: -8 }, elders: { t: -8 } }, local: { jobs: 3, env: -4, land: -3 }, nation: nf({ gov: 6, resinc: 10, foreign: 3, trust: -2 }), flags: { oilLive: true, oilNoConsult: true }, after: [revenue, { in: 3, event: 'oil_spill', hint: 'Rushed approvals skip safety checks. Pollution may follow.' }] }),
+      ch('Renegotiate: safeguards, compensation, local jobs', ['law', 'public', 'money'], 'You put three demands on the table: a clean-up guarantee, pay for affected families, and local hiring. Meridian\'s lawyers go quiet.',
+        { rep: 2 }, { roll: { p: s => 0.3 + 0.05 * s.me.skills.fin + (s.nation.inst - 45) / 200 + (s.nation.gov - 45) / 250 - (s.nation.foreign - 45) / 250,
+          hit: { text: 'Meridian blinks. You get safeguards, a compensation fund and 200 local jobs.', fx: { support: 5, rep: 4, local: { jobs: 6, env: -1 }, nation: nf({ gov: 5, resinc: 7, trust: 1, foreign: 1 }), flags: { oilLive: true, oilSafeguards: true }, after: [revenue] } },
+          miss: { text: 'Meridian threatens to take its money elsewhere. Talks stall and investors grumble.', fx: { support: -2, flags: { oilStalled: true }, rel: { patron: { t: -6 } }, after: [{ in: 3, event: 'oil_return', hint: 'The company may come back, with different terms.' }] } } } }),
+      ch('Delay until the community is consulted', ['public'], 'You tell Meridian: no signature until families have their say. Open meetings run for three weeks. For once, people feel heard.',
+        { support: 4, rep: 4, rel: { youth: { t: 8 }, elders: { t: 10 }, patron: { t: -8 } }, nation: nf({ trust: 1 }), flags: { consulted: true, oilStalled: true }, after: [{ in: 3, event: 'oil_return', hint: 'Investors are impatient. Meridian will be back.' }] }, { lean: 'community' }),
+    ],
+  },
+  oil_return: {
+    scene: 'fuel', who: 'Meridian Delta Petroleum', title: 'Meridian Comes Back',
+    body: s => `Meridian is back with a revised offer. ${s.flags.consulted ? 'This time the community has already spoken, which gives you leverage.' : 'They know you are under pressure to bring in money.'} ${s.nation.gov < 40 ? 'The government is short of cash, and they know that too.' : ''}`,
+    pressure: 'Walking away costs money. Signing badly costs trust.',
+    choices: [
+      ch('Sign the revised offer as it stands', ['money', 'law'], 'You sign. Money will flow, with fewer protections than anyone would like.', { support: -2, local: { jobs: 2, env: -3 }, nation: nf({ gov: 6, resinc: 8, foreign: 3 }), flags: { oilLive: true, oilStalled: false }, after: [revenue, { in: 5, event: 'oil_spill', hint: 'Fewer safeguards mean more risk later.' }] }),
+      ch('Sign only with a community benefit agreement', ['public', 'law'], 'You insist the community gets written guarantees: jobs, clean-up funds and a share of the profits.', {}, { roll: { p: s => 0.45 + (s.flags.consulted ? 0.25 : 0) + (s.nation.inst - 45) / 250,
+        hit: { text: 'Meridian signs. The community gets guarantees in writing.', fx: { support: 6, rep: 5, local: { jobs: 5, env: -1, land: 1 }, nation: nf({ gov: 4, resinc: 6, trust: 2 }), flags: { oilLive: true, oilSafeguards: true, oilStalled: false }, after: [revenue] } },
+        miss: { text: 'No deal. Meridian leaves for a neighbouring state.', fx: { support: -2, nation: nf({ gov: -2, resinc: -2 }), flags: { oilStalled: false, oilGone: true } } } } }),
+      ch('Reject it and back local industry instead', ['public', 'money'], 'You turn the company down and back a fish-processing and farm co-operative. It will not be fast.', { support: 3, rep: 3, local: { jobs: 4, food: 3 }, nation: nf({ foreign: -2 }), flags: { oilStalled: false, oilGone: true }, after: [{ in: 4, outcome: 'local_processing', hint: 'Local industry takes time to grow.' }] }, { cost: s => paid(s, 2e6), lean: 'community' }),
+    ],
+  },
+  oil_spill: {
+    scene: 'wave', who: 'Fishermen of the creek', title: 'The Creek Turns Black',
+    body: s => `A pipeline leak has poisoned the creek near ${W(s)}. ${s.flags.oilSafeguards ? 'The safeguards you insisted on limit the damage, but fishing has stopped for now.' : 'Nobody checked the pipeline and there was no clean-up plan. Dead fish float past the market.'}`,
+    pressure: 'Families are asking who allowed this.',
+    choices: [
+      ch('Order Meridian to clean up at its own cost', ['law', 'public'], 'You send the order and wait for the lawyers.', {}, { roll: { p: s => 0.35 + (s.flags.oilSafeguards ? 0.3 : 0) + (s.nation.inst - 45) / 150 - (s.nation.foreign - 45) / 300,
+        hit: { text: 'Meridian pays and the clean-up starts. A clear warning to other companies.', fx: { local: { env: 7 }, rep: 5, support: 5, nation: nf({ inst: 2, trust: 2 }) } },
+        miss: { text: 'Meridian\'s lawyers tie it up in court. Months pass.', fx: { local: { env: -1 }, support: -3, nation: nf({ trust: -1 }) } } } }),
+      ch('Pay for the clean-up from public money', ['money', 'public'], 'A crew arrives. Meridian quietly thanks you.', { local: { env: 6 }, support: 2, nation: nf({ gov: -2 }) }, { cost: s => paid(s, 3e6) }),
+      ch('Downplay it and blame vandals', ['press', 'law'], 'The statement calls it "minor and under control". Locals post photos.', { rep: -6, support: -6, exposure: 5, local: { env: -3, health: -2 }, flags: { coverup: true }, nation: nf({ trust: -2 }) }),
+    ],
+  },
+  oil_discovery: {
+    scene: 'fuel', who: 'Geological Survey', title: 'A Giant Oil Field',
+    weight: s => ROLE(s) >= 3 && !s.flags.discovery ? 8 : 0, once: true,
+    body: s => `A survey finds a huge oil field under swamp and farmland near ${W(s)}. Overnight, everyone has an opinion on who should get the rights and who should keep the profits.`,
+    pressure: 'Whoever controls this decides who benefits for thirty years.',
+    choices: [
+      ch('Auction the rights to the highest bidder', ['money', 'law'], 'Foreign majors bid hard. The government banks a huge upfront payment. Most of the oil will be shipped out raw, with little added value at home.', { rep: -1, local: { jobs: 2, land: -4, env: -4 }, nation: nf({ gov: 10, resinc: 14, foreign: 6, env: -4 }), flags: { discovery: true, rawExport: true }, after: [revenue] }),
+      ch('Sell only to firms that refine and train people locally', ['public', 'law', 'money'], 'You tell bidders: refine here, hire here, train here.', {}, { roll: { p: s => 0.5 + (s.nation.inst - 45) / 200 - (s.nation.foreign - 45) / 250,
+        hit: { text: 'A firm accepts. A local refinery and a training college are on the way.', fx: { rep: 4, nation: nf({ gov: 4, resinc: 8, foreign: 2 }), flags: { discovery: true, localProc: true }, after: [{ in: 5, outcome: 'refinery_ready', hint: 'A local refinery could create jobs in about a year.' }] } },
+        miss: { text: 'Only one bidder shows up and demands softer terms. You take the money.', fx: { nation: nf({ gov: 6, resinc: 9, foreign: 4, env: -3 }), flags: { discovery: true, rawExport: true }, after: [revenue] } } } }),
+      ch('Develop it through a state-owned company', ['public', 'money', 'party'], 'It will be slow and expensive. But the profits stay home, if the company is run honestly.', { nation: nf({ gov: -3, foreign: -3 }), flags: { discovery: true }, after: [{ in: 6, outcome: 'national_co', hint: 'Success depends on how honestly it is run.' }] }, { cost: s => paid(s, 3e6) }),
+    ],
+  },
+
+  // ---------- land and ownership ----------
+  land_eviction: {
+    scene: 'house', who: 'Skyline Estates', title: 'The Industrial Park',
+    weight: s => s.q >= 1 ? 7 : 0, cooldown: 12,
+    body: s => `Skyline Estates plans an industrial park on farmland at the edge of ${W(s)}. About 120 families have farmed it for generations, mostly without paper titles. ${tl(s) < 40 ? 'The law favours the developer here: customary land rights are weakly protected.' : 'Some families hold old documents, which gives them a fighting chance.'}`,
+    pressure: 'Jobs for hundreds, or homes for 120 families. Both have votes.',
+    choices: [
+      ch(s => ROLE(s) >= 2 ? 'Approve the eviction notices and standard payout' : 'Advise families to take the standard payout', ['money', 'law'], 'The payout is small and the notices go out. The park will bring jobs, but 120 families lose their farms.',
+        { support: -8, rep: -6, rel: { elders: { t: -10 }, youth: { t: -8 }, market: { t: -4 } }, local: { jobs: 4, land: -12, food: -3 }, nation: nf({ gov: 2, land: -3, trust: -1 }), flags: { evicted: true }, after: [{ in: 2, event: 'land_court', hint: 'Families may take this to court.' }, { in: 4, outcome: 'park_opens', hint: 'The park could open within a year.' }] }),
+      ch(s => ROLE(s) >= 2 ? 'Insist on fair pay and a community share' : 'Organise families to demand fair pay and a share', ['law', 'public', 'money'], 'You put it plainly: pay market value and give the community a stake in the park.', { rep: 2 }, { roll: { p: s => 0.35 + tl(s) / 200 + (s.nation.inst - 45) / 300 + 0.04 * s.me.skills.org,
+        hit: { text: 'Skyline agrees: fair payouts and a 10% community stake.', fx: { support: 7, rep: 6, rel: { elders: { t: 8 }, market: { t: 6 } }, local: { land: -2, jobs: 3 }, nation: nf({ land: 1, trust: 1 }), flags: { landTrust: true, consulted: true }, after: [{ in: 4, outcome: 'land_trust_dividend', hint: 'The community stake could start paying out.' }] } },
+        miss: { text: 'Skyline refuses and pauses the project. Some families get a little, others nothing.', fx: { support: 1, local: { jobs: -1 }, flags: { consulted: true } } } } }),
+      ch('Commission a land survey and public hearing first', ['law', 'public'], 'A surveyor walks the farms with the families. Old boundary markers, a 1960s deed and a witness list appear.', { support: 3, rep: 3, flags: { consulted: true }, after: [{ in: 2, outcome: 'hearing_result', hint: 'The hearing will decide who really has rights.' }] }, { cost: s => paid(s, 400e3), lean: 'community' }),
+    ],
+  },
+  land_court: {
+    scene: 'scales', who: 'High Court', title: 'Families Take You to Court',
+    body: s => `Forty of the evicted families have filed suit over the ${W(s)} land. ${tl(s) >= 40 ? 'Their old documents give them a real case.' : 'Without formal titles their case is weak, but the sympathy is real.'}`,
+    pressure: 'Every court date puts the project, and your name, in the news.',
+    choices: [
+      ch('Settle with fair payouts now', ['money', 'public'], 'Families accept a better deal. The park proceeds with less anger.', { support: 5, rep: 4, local: { land: 5 }, nation: nf({ trust: 1 }) }, { cost: s => paid(s, 2e6) }),
+      ch('Fight it in court', ['law'], 'Lawyers file motion after motion.', {}, { roll: { p: s => Math.max(0.15, 0.75 - tl(s) / 150 - (s.nation.inst - 45) / 300),
+        hit: { text: 'The court sides with the developer. The families lose.', fx: { support: -5, rep: -4, local: { land: -3 }, nation: nf({ land: -2, trust: -1 }) } },
+        miss: { text: 'The court rules for the families and orders compensation.', fx: { support: 2, rep: -1, local: { land: 5 }, nation: nf({ inst: 1 }), flags: { evicted: false } } } } }),
+      ch('Publicly side with the families', ['public', 'press', 'party'], 'You say it plainly: the families were treated unfairly. Skyline is furious.', { rep: 8, support: 8, loyalty: -6, rel: { elders: { t: 10 }, youth: { t: 8 }, patron: { t: -10 }, press: { t: 6 } }, local: { land: 4 }, nation: nf({ trust: 1 }) }, { lean: 'welfare' }),
+    ],
+  },
+
+  // ---------- ordinary people's lives ----------
+  food_prices: {
+    scene: 'money', who: 'Iya Sade and the traders', title: 'Food Prices Jump',
+    weight: s => s.local.food < 55 ? 6 : 1, cooldown: 8,
+    effects: { local: { food: -4 }, nation: { food: -3, stab: -1 } },
+    body: s => `A bag of rice now costs more than many families earn in two days. Iya Sade says traders are squeezed too: imports, transport and fuel have all gone up. Radio phone-ins are angry.`,
+    pressure: 'Hungry people do not wait for the next election.',
+    choices: [
+      ch('Allow duty-free grain imports', ['money', 'public'], 'Imported rice floods in. Prices fall fast, but local farmers cannot compete.', { support: 4, local: { food: 9, jobs: -1 }, nation: nf({ food: 6, foreign: 3 }), after: [{ in: 3, outcome: 'farmers_squeeze', hint: 'Cheap imports can hurt local farmers.' }] }, { lean: 'market' }),
+      ch('Cap prices and subsidise traders', ['money', 'public'], 'Prices are capped and traders get support to cover the gap.', { support: 4, rel: { market: { t: 6 } }, local: { food: 6 }, nation: nf({ food: 4, gov: -3 }), after: [{ in: 2, outcome: 'shortage', hint: 'Price caps can cause hoarding.' }] }, { cost: s => paid(s, 2e6), lean: 'welfare' }),
+      ch('Back local farmers: storage, transport, seed', ['public', 'money'], 'Cold stores and a farmers\' co-operative will help food reach markets. It will not fix prices this month.', { support: 1, rel: { market: { t: 4 } }, local: { food: 2 }, after: [{ in: 4, outcome: 'harvest_gain', hint: 'If it works, food gets cheaper at harvest.' }] }, { cost: s => paid(s, 2.5e6), lean: 'community' }),
+    ],
+  },
+  factory_power: {
+    scene: 'bolt', who: 'Ade Plastics', title: 'The Factory May Close',
+    weight: s => s.local.power < 58 && s.local.jobs < 60 ? 5 : 0, cooldown: 10,
+    body: s => `Ade Plastics, the biggest employer in ${W(s)} with 300 workers, says electricity bills and blackouts may force it to close. The owner wants help. The workers are watching.`,
+    pressure: 'No power, no jobs. But every fix has a price.',
+    choices: [
+      ch('Subsidise its electricity bills', ['money'], 'The factory stays open. Critics ask why one firm gets help.', { support: 3, local: { jobs: 4 }, nation: nf({ gov: -1 }) }, { cost: s => paid(s, 1.5e6) }),
+      ch('Allow a gas-powered generator plant', ['public', 'law'], 'The factory gets steady power quickly. The plant also burns gas next to homes.', { support: 2, local: { power: 6, jobs: 3, env: -5, health: -1 }, nation: nf({ env: -1 }) }),
+      ch('Partner on a solar mini-grid', ['public', 'money'], 'A solar mini-grid will take time, but it could power the market too.', { rep: 3, after: [{ in: 3, outcome: 'factory_solar', hint: 'If built, it will power the whole area.' }] }, { cost: s => paid(s, 3e6) }),
+    ],
+  },
+  hospital_supplies: {
+    scene: 'health', who: 'Matron Grace Okoro', title: 'The Hospital Runs Out',
+    weight: s => s.local.health < 55 ? 5 : 0, cooldown: 8,
+    body: s => `The ${W(s)} General Hospital has run out of oxygen and basic drugs. Matron Okoro says mothers are being sent home with a prescription and a prayer.`,
+    pressure: 'Lives are at stake this week, not next year.',
+    choices: [
+      ch('Make an emergency purchase', ['money', 'public'], 'Oxygen cylinders and drugs arrive within days. Wards breathe again.', { support: 5, local: { health: 8 }, nation: nf({ gov: -2 }) }, { cost: s => paid(s, 3e6), lean: 'welfare' }),
+      ch('Accept a foreign donor package with conditions', ['public', 'law'], 'Shipping containers of supplies arrive. The donor\'s conditions are in the fine print.', { support: 3, local: { health: 7 }, nation: nf({ foreign: 4 }), rel: { foreign: { t: 5 } }, after: [{ in: 4, outcome: 'supplier_lock', hint: 'Donor packages can come with strings.' }] }),
+      ch('Move money from school repairs', ['public'], 'Supplies arrive; classroom repairs are paused.', { support: -1, rep: -2, local: { health: 6, edu: -5 } }),
+    ],
+  },
+  pollution_protest: {
+    scene: 'wave', who: 'Fishermen\'s union', title: 'Dead Fish on the Road',
+    weight: s => s.local.env < 45 ? 6 : 0, cooldown: 8,
+    body: s => `Fishermen and farmers from ${W(s)} have dumped dead fish on the main road. "You promised us clean water," one shouts into a radio microphone. Traffic is stuck for hours.`,
+    pressure: 'The water is the problem. The cameras are the deadline.',
+    choices: [
+      ch('Order an inspection and fine the polluter', ['law', 'public'], 'Inspectors go out at dawn.', {}, { roll: { p: s => 0.35 + (s.nation.inst - 45) / 150 + (s.flags.oilSafeguards ? 0.15 : 0),
+        hit: { text: 'Inspectors find clear violations. The company pays and cleans up.', fx: { local: { env: 6 }, support: 6, rep: 5, nation: nf({ inst: 1, trust: 1 }) } },
+        miss: { text: 'The inspection "finds nothing". People smell a cover-up.', fx: { support: -4, rep: -3, exposure: 3 } } } }),
+      ch('Set up a compensation fund', ['money', 'public'], 'A fund pays affected families. It does not clean the water.', { support: 5, rel: { youth: { t: 4 } }, local: { env: 1 } }, { cost: s => paid(s, 2e6) }),
+      ch('Send security to clear the road', ['law'], 'The road is cleared. The water is not.', { support: -6, rep: -6, influence: 3, nation: nf({ stab: -2 }) }),
+    ],
+  },
+
+  // ---------- foreign influence ----------
+  foreign_loan: {
+    scene: 'handshake', who: 'Helen Marlowe, Continental Development Bank', title: 'A Big Foreign Loan',
+    weight: s => ROLE(s) >= 3 && s.nation.gov < 65 ? 8 : 0, cooldown: 12,
+    body: s => `Continental Development Bank offers a large loan to build a railway and a power plant. The conditions: a foreign contractor, a currency clause and cuts to fuel subsidies. ${s.nation.debt > 60 ? 'The country already owes a lot.' : 'The government is short of cash for big projects.'}`,
+    pressure: 'The projects are real. So is the repayment schedule.',
+    choices: [
+      ch('Accept the loan as offered', ['money', 'law'], 'Money arrives and cranes appear. The repayment schedule goes in a drawer.', { local: { jobs: 3 }, rel: { foreign: { t: 10 } }, nation: nf({ gov: 10, debt: 10, foreign: 7, trust: -1 }), after: [{ in: 5, outcome: 'debt_squeeze', hint: 'Repayments start in about a year.' }, { in: 6, outcome: 'rail_built', hint: 'The railway could be finished in about eighteen months.' }] }),
+      ch('Negotiate better terms', ['law', 'money'], 'You ask for a lower rate, local contractors and protection for fuel subsidies.', {}, { roll: { p: s => 0.3 + 0.05 * s.me.skills.fin + (s.nation.inst - 45) / 200 - (s.nation.foreign - 45) / 200,
+        hit: { text: 'You secure a lower rate, local contractors and a clause protecting fuel subsidies.', fx: { rep: 4, local: { jobs: 4 }, rel: { foreign: { t: 4 } }, nation: nf({ gov: 7, debt: 5, foreign: 2 }), after: [{ in: 6, outcome: 'rail_built', hint: 'The railway could be finished in about eighteen months.' }] } },
+        miss: { text: 'The bank walks away. Headlines say "talks collapse".', fx: { support: -3, rel: { foreign: { t: -8 } } } } } }),
+      ch('Refuse and raise money at home', ['public'], 'Slower and smaller, but nobody abroad can dictate terms.', { rep: 3, nation: nf({ foreign: -3 }), after: [{ in: 4, outcome: 'domestic_bond', hint: 'A domestic bond might raise some money.' }] }),
+    ],
+  },
+  contract_terms: {
+    scene: 'phone', who: 'Lumen Telecom', title: 'The Foreign Company Wants Better Terms',
+    weight: s => ROLE(s) >= 2 && s.q >= 4 ? 4 : 0, cooldown: 12,
+    body: s => `Lumen Telecom, a foreign company, is building phone and internet networks across the region. Now it wants a seven-year tax holiday and exclusive rights, or it will "reconsider" its investment.`,
+    pressure: 'Foreign money brings jobs and skills. It can also bring dependence.',
+    choices: [
+      ch('Give them the tax holiday and exclusivity', ['money', 'law'], 'Lumen builds fast. In seven years the government will have little to show in tax.', { support: 2, local: { jobs: 4 }, nation: nf({ jobs: 3, gov: -2, foreign: 5 }), flags: { lumen: true } }),
+      ch('Hold firm on the original terms', ['law'], 'You tell Lumen the terms stand.', {}, { roll: { p: s => 0.35 + (65 - s.nation.foreign) / 150 + (s.nation.inst - 45) / 250,
+        hit: { text: 'Lumen grumbles and signs. The country\'s share is intact.', fx: { rep: 4, local: { jobs: 3 }, nation: nf({ jobs: 2, gov: 2 }) } },
+        miss: { text: 'Lumen scales back and builds in the next country.', fx: { support: -3, local: { jobs: -2 }, nation: nf({ jobs: -2, foreign: 1 }) } } } }),
+      ch('Offer a deal with local partners and local hiring', ['public', 'law'], 'You propose a joint venture with a local firm, local hiring and training.', {}, { roll: { p: s => 0.45 + s.me.skills.fin * 0.03,
+        hit: { text: 'You get a joint venture, training and a share of the revenue.', fx: { support: 4, rep: 3, local: { jobs: 5, edu: 2 }, nation: nf({ jobs: 3, gov: 1, foreign: -2 }) } },
+        miss: { text: 'Talks drag on. Lumen starts only the easy parts.', fx: { local: { jobs: 1 }, nation: nf({ foreign: 2 }) } } } }),
+    ],
+  },
+
+  // ---------- political survival ----------
+  donor_favour: {
+    scene: 'briefcase', who: 'Dr. Tayo Reis', title: 'A Generous Donor',
+    weight: s => s.q >= 2 ? 4 : 0, cooldown: 12,
+    body: s => `Dr. Tayo Reis of Reis Logistics offers to bankroll your campaign with ${N(fundBase(s) * 8)}, no strings, he says. Over lunch he mentions he would like his firm "considered" for the next big transport contract.`,
+    pressure: 'Campaigns run on money. Money has owners.',
+    choices: [
+      ch('Take the money and the favour', ['money', 'law', 'party'], 'Funds arrive that afternoon. So does a note: "Looking forward to working together."', { funds: s => fundBase(s) * 8, exposure: 8, rel: { donor: { t: 15, o: 35 } }, flags: { donorOwed: true }, after: [{ in: 4, event: 'donor_calls', hint: 'Donors expect something back.' }] }),
+      ch('Take the money, but any contract goes to open tender', ['money', 'law'], 'You say it plainly: any contract goes through open tender.', { rep: 2 }, { roll: { p: () => 0.6,
+        hit: { text: 'Reis laughs. "Fair enough." The cheque stays.', fx: { funds: s => fundBase(s) * 4, rel: { donor: { t: 3, o: 10 } }, after: [{ in: 4, event: 'donor_calls', hint: 'He may test that promise later.' }] } },
+        miss: { text: 'Reis shrinks the donation, annoyed.', fx: { funds: s => fundBase(s) * 2, rel: { donor: { t: -4, o: 5 } } } } } }),
+      ch('Politely refuse', ['public'], 'You hand back the brochure. Your campaign manager stares at you.', { rep: 5, support: 2, rel: { donor: { t: -8 } } }, { lean: 'reform' }),
+    ],
+  },
+  donor_calls: {
+    scene: 'phone', who: 'Dr. Tayo Reis', title: 'Dr. Reis Calls',
+    body: s => `Dr. Reis wants Reis Logistics to run the ${ROLE(s) >= 2 ? 'ward transport and market contract' : 'new motor-park project'}. ${s.flags.donorOwed ? 'He reminds you of his donation, politely.' : 'You said it would go to open tender; he says his bid will be "very competitive".'}`,
+    pressure: 'Everyone is watching who gets what.',
+    choices: [
+      ch('Award it to him directly', ['money', 'law'], 'It goes through with a signature. The ledger now carries your name.', { exposure: 10, influence: 4, rep: -3, rel: { donor: { t: 10, o: -35 } }, local: { transport: 4 }, nation: nf({ inst: -1 }) }),
+      ch('Run an open tender and let him bid', ['law', 'public'], 'A public tender goes out. Three firms bid.', { rep: 3, rel: { donor: { t: -4, o: -20 } }, nation: nf({ inst: 1 }) }),
+      ch('Refuse, and repay him', ['money', 'public'], 'You hand back the money. He does not look happy.', { rep: 4, support: 2, rel: { donor: { t: -10, o: -60 } } }, { cost: s => ({ funds: fundBase(s) * 4 }) }),
+    ],
+  },
+  journalist_contract: {
+    scene: 'phone', who: 'Ngozi Eze', title: 'A Reporter Is Digging',
+    weight: s => (s.flags.contractorPaid || s.flags.oilNoConsult || s.flags.coverup || s.flags.evicted || s.me.exposure >= 15) ? 5 : 0, cooldown: 10,
+    body: s => {
+      const t = s.flags.coverup ? 'your statement on the oil spill' : s.flags.oilNoConsult ? 'how the oil deal was approved without asking residents' : s.flags.contractorPaid ? 'the extra payment on the road contract' : s.flags.evicted ? 'the evictions for the industrial park' : 'your finances';
+      return `Ngozi Eze of The Evening Ledger is asking questions about ${t}. She wants documents, and she has already spoken to people who were there.`;
+    },
+    pressure: 'Earlier decisions come back, usually with a notebook.',
+    choices: [
+      ch('Open the books and answer everything', ['press', 'law'], 'You clear your diary for her.', {}, { roll: { p: s => 0.85 - s.me.exposure / 90 - (s.flags.coverup ? 0.2 : 0),
+        hit: { text: 'The documents hold up. Her story is fair, and you look transparent.', fx: { rep: 6, support: 3, exposure: -6, rel: { press: { t: 8 } }, nation: nf({ trust: 1, inst: 1 }) } },
+        miss: { text: 'The documents raise more questions than they answer.', fx: { rep: -8, support: -5, exposure: 6, rel: { press: { t: 2 } } } } } }),
+      ch('Stonewall and threaten to pull government ads', ['press', 'law'], 'The Ledger prints "No comment" and your threat.', { rep: -6, support: -4, exposure: 4, rel: { press: { t: -20 } }, nation: nf({ inst: -1, trust: -1 }) }),
+      ch('Point her towards a rival\'s dealings', ['press', 'party'], 'You hand her a thick file about the rival\'s cousin\'s firm. She notices who gave it.', { support: 2, rel: { rival: { t: -12 }, press: { t: -4 } } }, { roll: { p: () => 0.5,
+        hit: { text: 'The story shifts focus.', fx: { exposure: -3 } }, miss: { text: 'She prints both stories.', fx: { rep: -4, exposure: 3 } } } }),
+    ],
+  },
+});
+
+Object.assign(OUTCOMES, {
+  oil_revenue: s => ({ text: s.flags.oilSafeguards ? 'The first oil payment reaches the treasury. Part of it funds the compensation scheme you negotiated.' : 'The first oil payment reaches the treasury. How much reaches ordinary people is another question.', fx: { nation: nf({ gov: 5 }), news: [['ledger', 'Oil money flows in: government revenue jumps.']] } }),
+  park_opens: s => ({ text: 'The industrial park opens. Some local people get jobs; many evicted families are not among them.', fx: { local: { jobs: 5 }, nation: nf({ jobs: 2 }), news: [['radio', 'Industrial park opens; evicted families picket the gate.']] } }),
+  land_trust_dividend: s => ({ text: 'The community\'s 10% stake pays its first dividend: more cash than many families ever saw from that land.', fx: { support: 6, rep: 3, local: { jobs: 2, land: 3 }, nation: nf({ trust: 1 }) } }),
+  hearing_result: s => tl(s) >= 35
+    ? { text: 'The hearing recognises the families\' customary claims. The developer must negotiate properly.', fx: { support: 5, rep: 3, local: { land: 4 }, nation: nf({ land: 1, inst: 1 }) } }
+    : { text: 'The hearing finds most families have no formal papers. The developer pays modest compensation. The law, not fairness, decided this.', fx: { support: 1, local: { land: -2 }, nation: nf({ land: -1 }) } },
+  refinery_ready: s => ({ text: 'The local refinery opens. It employs hundreds and keeps more of the oil\'s value at home.', fx: { support: 5, local: { jobs: 8 }, nation: nf({ jobs: 4, gov: 4, resinc: 4 }), news: [['radio', 'Local refinery opens; hundreds hired.']] } }),
+  national_co: (s, r) => r < 0.25 + s.nation.inst / 150
+    ? { text: 'The national oil company turns a profit and runs cleanly.', fx: { rep: 4, nation: nf({ gov: 8, resinc: 10, trust: 2 }) } }
+    : { text: 'Contracts at the national oil company go to friends. Costs balloon and money disappears.', fx: { rep: -5, exposure: 6, nation: nf({ gov: -3, trust: -3, inst: -1 }), news: [['ledger', 'Questions over oil company contracts.']] } },
+  farmers_squeeze: s => ({ text: 'Cheap imports make local crops hard to sell. Many farmers cut back; some leave the land.', fx: { support: -4, local: { jobs: -3, food: -2 }, nation: nf({ jobs: -2 }) } }),
+  shortage: (s, r) => r < 0.3 + (50 - s.nation.inst) / 150
+    ? { text: 'Traders hoard stock because of the price cap. Shelves empty and street prices rise again.', fx: { support: -4, local: { food: -5 } } }
+    : { text: 'Prices hold and shelves stay stocked. The cap works, for now.', fx: { support: 2, local: { food: 2 } } },
+  harvest_gain: s => ({ text: 'Storage and transport pay off at harvest. More food reaches the market and prices ease.', fx: { support: 5, local: { food: 8, jobs: 3 }, nation: nf({ food: 5 }) } }),
+  factory_solar: s => ({ text: 'The solar mini-grid switches on. The factory runs steadily and the market gets power too.', fx: { support: 4, local: { power: 8, jobs: 3, env: 1 }, nation: nf({ power: 2 }) } }),
+  debt_squeeze: s => ({ text: 'Loan repayments begin. Money that could have built clinics now goes abroad.', fx: { nation: nf({ gov: -6, trust: -1 }), news: [['ledger', 'Repayments on foreign loan bite into budgets.']] } }),
+  rail_built: s => ({ text: 'The new railway opens, cutting travel times and moving goods more cheaply.', fx: { support: 4, local: { transport: 8, jobs: 2 }, nation: nf({ transport: 6, jobs: 2 }), news: [['radio', 'New railway opens; commuters celebrate.']] } }),
+  domestic_bond: (s, r) => r < 0.3 + s.nation.trust / 200
+    ? { text: 'Citizens and banks buy the bond. Money is raised without foreign strings.', fx: { rep: 3, nation: nf({ gov: 4, trust: 2, foreign: -1 }) } }
+    : { text: 'The bond is undersubscribed. Less money comes in than hoped.', fx: { nation: nf({ gov: 1 }) } },
+  supplier_lock: s => ({ text: 'The donor package locks the hospital into buying only from approved suppliers, at higher prices.', fx: { local: { health: -2 }, nation: nf({ gov: -2 }) } }),
+  local_processing: s => ({ text: 'The fish-processing and farm co-operative takes off, employing hundreds locally.', fx: { support: 4, local: { jobs: 6, food: 3 }, nation: nf({ jobs: 2 }) } }),
+});

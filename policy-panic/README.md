@@ -8,4 +8,4 @@ npm test       # engine tests (Node 20+)
 ```
 
 No dependencies, no build. Plays offline after first load. All characters, parties and places are fictional.
-See [docs/DESIGN.md](docs/DESIGN.md) for the plan, design system, state model, multiplayer architecture and review.
+Includes a country view (land, resources, foreign deals, ordinary people's lives) and a path to President. See [docs/DESIGN.md](docs/DESIGN.md) for the plan, design system, state model, multiplayer architecture and review.

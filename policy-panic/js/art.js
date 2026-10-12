@@ -56,8 +56,8 @@ export function scene(key) {
   return `<svg class="scene" viewBox="0 0 360 110" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Scene illustration" focusable="false">
 <defs><pattern id="${id}" width="36" height="36" patternUnits="userSpaceOnUse"><rect width="36" height="36" fill="${bg}"/><circle cx="18" cy="18" r="9" fill="none" stroke="#FFC21A" stroke-opacity=".28" stroke-width="3"/><circle cx="18" cy="18" r="3" fill="#F3E9D2" fill-opacity=".25"/><path d="M0 0l8 8M36 0l-8 8M0 36l8-8M36 36l-8-8" stroke="#F3E9D2" stroke-opacity=".2" stroke-width="2"/></pattern></defs>
 <rect width="360" height="110" fill="url(#${id})"/><rect y="94" width="360" height="16" fill="#15110E" opacity=".35"/>
-<circle cx="180" cy="55" r="40" fill="#15110E"/><circle cx="180" cy="55" r="40" fill="none" stroke="#FFC21A" stroke-width="4"/>
-<g transform="translate(150 25) scale(2.5)" fill="none" stroke="#F3E9D2" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ICONS[key] || ICONS.people}</g></svg>`;
+<circle cx="180" cy="55" r="33" fill="#15110E"/><circle cx="180" cy="55" r="33" fill="none" stroke="#FFC21A" stroke-width="4"/>
+<g transform="translate(157 32) scale(1.92)" fill="none" stroke="#F3E9D2" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ICONS[key] || ICONS.people}</g></svg>`;
 }
 
 // Title-screen poster: a lone candidate, a roaring crowd, torn posters, a sun that looks like a ballot stamp
@@ -78,3 +78,30 @@ ${crowd}<rect y="250" width="360" height="10" fill="#15110E"/></svg>`;
 }
 
 export const logoMark = `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect width="64" height="64" rx="14" fill="#15110E"/><circle cx="32" cy="32" r="22" fill="#E4411B"/><path d="M26 18h8a8 8 0 0 1 0 16h-8z" fill="#FFC21A"/><rect x="24" y="16" width="5" height="32" fill="#FFC21A"/><circle cx="31" cy="50" r="3" fill="#FFC21A"/></svg>`;
+
+// A small landscape that visibly changes with the state of the place: lights, smoke, farmland, river, crowds.
+export function countryScene(o) {
+  const lit = o.power >= 50, haze = Math.max(0, 100 - o.env) / 260, n = 2 + Math.round(o.jobs / 20);
+  const sky = o.trust >= 55 ? '#F6C36B' : o.trust >= 35 ? '#CDBE9F' : '#8F897D';
+  const field = (o.land + o.food) / 2 >= 50 ? '#3F8F4F' : (o.land + o.food) / 2 >= 35 ? '#8A8A3A' : '#7A5A36';
+  const river = o.env >= 50 ? '#4A90B8' : o.env >= 35 ? '#6F7F6A' : '#4B3E2E';
+  const bld = Array.from({ length: n }, (_, i) => {
+    const h = 30 + ((i * 17) % 28), x = 70 + i * 27;
+    const win = [0, 1].map(r => `<rect x="${x + 5}" y="${112 - h + 6 + r * 11}" width="5" height="6" fill="${lit ? '#FFC21A' : '#2a2520'}"/><rect x="${x + 14}" y="${112 - h + 6 + r * 11}" width="5" height="6" fill="${lit && i % 3 !== 2 ? '#FFC21A' : '#2a2520'}"/>`).join('');
+    return `<rect x="${x}" y="${112 - h}" width="24" height="${h}" fill="#5B4E3E" stroke="#15110E" stroke-width="2"/>${win}`;
+  }).join('');
+  const factory = o.jobs >= 35 ? `<g><rect x="14" y="88" width="40" height="24" fill="#6B5E4E" stroke="#15110E" stroke-width="2"/><rect x="20" y="72" width="7" height="18" fill="#4A4036" stroke="#15110E" stroke-width="2"/><rect x="38" y="76" width="7" height="14" fill="#4A4036" stroke="#15110E" stroke-width="2"/><circle cx="24" cy="66" r="7" fill="#3a3330" opacity="${0.25 + haze * 2}"/><circle cx="32" cy="58" r="9" fill="#3a3330" opacity="${0.2 + haze * 2}"/></g>` : '';
+  const clinic = o.health >= 50 ? `<g><rect x="262" y="90" width="30" height="22" fill="#F3E9D2" stroke="#15110E" stroke-width="2"/><path d="M277 94v14M270 101h14" stroke="#E4411B" stroke-width="4"/></g>` : '';
+  const derrick = o.oil ? `<g stroke="#15110E" stroke-width="2" fill="none"><path d="M322 112l8-34 8 34M325 100h10M327 88h6"/><path d="M330 78v-8" /></g><path d="M330 70q-5-8 0-14 5 6 0 14z" fill="#E4411B"/>` : '';
+  const pot = o.transport < 35 ? `<ellipse cx="120" cy="131" rx="9" ry="3" fill="#15110E"/><ellipse cx="220" cy="129" rx="7" ry="2.5" fill="#15110E"/><ellipse cx="290" cy="132" rx="8" ry="3" fill="#15110E"/>` : '';
+  const crowd = o.stab < 40 ? Array.from({ length: 7 }, (_, i) => `<g><circle cx="${140 + i * 13}" cy="${124 + (i % 2) * 2}" r="4" fill="#15110E"/><path d="M${140 + i * 13} ${128 + (i % 2) * 2}v8" stroke="#15110E" stroke-width="4"/>${i % 2 === 0 ? `<path d="M${140 + i * 13} 126l0-16" stroke="#15110E" stroke-width="1.5"/><rect x="${134 + i * 13}" y="104" width="12" height="8" fill="#F3E9D2" stroke="#15110E"/>` : ''}</g>`).join('') : '';
+  const label = `Scene of the area: lights ${lit ? 'on' : 'mostly off'}, ${o.env < 40 ? 'polluted river' : 'clean river'}, ${o.stab < 40 ? 'protesters on the road' : 'calm streets'}`;
+  return `<svg class="cscene" viewBox="0 0 360 150" preserveAspectRatio="xMidYMid slice" role="img" aria-label="${label}" focusable="false">
+<rect width="360" height="150" fill="${sky}"/><circle cx="296" cy="36" r="20" fill="#FFC21A" opacity="${0.35 + o.trust / 160}"/>
+<path d="M0 96q50-26 110-4t120-6q60-16 130 8v30H0z" fill="#6B7F4A" opacity=".8"/>
+<rect y="104" width="360" height="22" fill="${field}"/><path d="M0 110h360M0 117h360" stroke="#15110E" stroke-opacity=".25" stroke-width="1.5" stroke-dasharray="8 6"/>
+<path d="M0 118q60 10 120 0t120 4t120-2v10H0z" fill="${river}"/>
+${factory}${bld}${clinic}${derrick}
+<rect y="126" width="360" height="18" fill="#3A3532"/><path d="M0 135h360" stroke="#F3E9D2" stroke-width="2" stroke-dasharray="14 12" opacity=".7"/>${pot}${crowd}
+<rect width="360" height="126" fill="#6B5A3A" opacity="${haze}"/><rect y="144" width="360" height="6" fill="#15110E"/></svg>`;
+}

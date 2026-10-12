@@ -1,14 +1,15 @@
 // Policy Panic rules engine. Pure functions: (state, input) -> { state, report } | { error }.
 // No DOM. The UI never computes consequences; it only renders what this module returns.
-import { ROLES, REGIONS, ORIGINS, IDEOLOGIES, EVENTS, OUTCOMES, MOVES, SERVICES, IND, N, CAST, PARTIES } from './content.js';
+import { ROLES, REGIONS, ORIGINS, IDEOLOGIES, EVENTS, OUTCOMES, MOVES, SERVICES, IND, IND_INFO, N, CAST, PARTIES } from './content.js';
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 export const ELECTION_CYCLE = 16;
 export const FIRST_ELECTION = 8;
 export const MOVES_PER_Q = 2;
 const REL_IDS = Object.keys(CAST);
 const REL_DEFAULT = { family: 30, rival: -10 };
-const NATION_START = { power: 40, jobs: 38, health: 42, edu: 46, transport: 36, debt: 45, trust: 42, inst: 45 };
+const NATION_START = { power: 40, jobs: 38, health: 42, edu: 46, transport: 36, food: 40, land: 42, env: 45, debt: 45, trust: 42, inst: 45, gov: 45, resinc: 25, foreign: 45, stab: 50 };
+const NATION_BAD = new Set(['debt', 'foreign']); // for these, higher is worse
 const clamp = (v, a = 0, b = 100) => Math.max(a, Math.min(b, v));
 const avg = o => SERVICES.reduce((t, k) => t + o[k], 0) / SERVICES.length;
 
@@ -142,7 +143,7 @@ export function diff(a, b, s) {
     let label, group, bad = false;
     if (ROW[k]) [label, group, bad] = ROW[k];
     else if (k.startsWith('local.')) { label = `${IND[k.slice(6)]} (${ward})`; group = 'public'; }
-    else if (k.startsWith('nation.')) { const i = k.slice(7); label = `${IND[i]} (nation)`; group = 'public'; bad = i === 'debt'; }
+    else if (k.startsWith('nation.')) { const i = k.slice(7); label = `${IND[i]} (nation)`; group = 'public'; bad = NATION_BAD.has(i); }
     else if (k.startsWith('rel.')) { label = `Trust: ${CAST[k.slice(4)].name}`; group = 'power'; }
     else { label = `Owes ${CAST[k.slice(4)].name}`; group = 'power'; bad = true; }
     const d = b[k] - a[k];
@@ -171,6 +172,7 @@ function meaning(a, b, s) {
 // Decisions
 // ---------------------------------------------------------------------------------------
 const lookup = ref => ref.event ? EVENTS[ref.event] : MOVES[ref.move];
+const labelOf = (c, s) => typeof c.label === 'function' ? c.label(s) : c.label;
 const costOf = (s, c) => typeof c.cost === 'function' ? c.cost(s) : (c.cost || {});
 function blocked(s, c) {
   const r = c.req && c.req(s); if (r) return r;
@@ -186,7 +188,7 @@ export function decisionView(s, ref) {
   const d = lookup(ref); if (!d) return null;
   return {
     ref, title: d.title, who: d.who, scene: d.scene, body: d.body(s), pressure: d.pressure || '',
-    choices: d.choices.map((c, i) => ({ i, label: c.label, stakes: c.stakes || [], reason: blocked(s, c), cost: costText(s, c), risky: !!c.roll })),
+    choices: d.choices.map((c, i) => ({ i, label: labelOf(c, s), stakes: c.stakes || [], reason: blocked(s, c), cost: costText(s, c), risky: !!c.roll })),
   };
 }
 
@@ -201,7 +203,7 @@ export function choose(state, ref, idx) {
   if (!c) return { error: 'Invalid choice.' };
   const reason = blocked(s, c); if (reason) return { error: reason };
 
-  const before = snap(s), logLen = s.nlog || 0, report = { kind: 'decision', title: d.title, choice: c.label, uncertain: [], rolled: null, notes: [] };
+  const before = snap(s), logLen = s.nlog || 0, report = { kind: 'decision', title: d.title, choice: labelOf(c, s), uncertain: [], rolled: null, notes: [] };
   const ctx = { cause: d.title, report };
   const k = costOf(s, c);
   if (k.wealth) s.me.wealth -= k.wealth;
@@ -246,8 +248,43 @@ const AMBIENT = [
   ['trust', s => s.nation.trust < 30, 'ledger', 'Public trust in government hits a record low, new poll shows.'],
   ['grid', s => s.nation.power < 30, 'radio', 'National grid collapses again. Generators sell out in Lagoon markets.'],
   ['inst', s => s.nation.inst > 60, 'ledger', 'Courts and watchdogs flex: analysts say institutions are "finally biting".'],
+  ['gap', s => s.nation.gov >= 60 && living(s.nation) < 45, 'ledger', 'Government revenue is up, yet food and power are no better for ordinary people, critics say.'],
+  ['env', s => s.local.env < 35, 'chatter', 'Fish kills and oily water in {ward}: "Who will answer for this?"'],
+  ['land', s => s.local.land < 30, 'radio', 'Families in {ward} fear eviction as developers circle.'],
+  ['foreign', s => s.nation.foreign > 65, 'ledger', 'Lenders and foreign firms hold growing sway over government decisions, analysts warn.'],
+  ['stab', s => s.nation.stab < 30, 'radio', 'Strikes and protests spread across several states.'],
   ['clinic', s => s.local.health > 65, 'radio', 'Patients praise {ward} health centre: "Finally, a working fridge."'],
 ];
+
+const DECAY = { power: 0.8, transport: 0.8, food: 0.5, land: 0.1, env: 0.15 };
+const living = o => SERVICES.reduce((t, k) => t + o[k], 0) / SERVICES.length;
+// Slow changes get a recorded cause once they add up to a visible amount.
+function slow(s, scope, key, d, cause) {
+  s[scope][key] = clamp(s[scope][key] + d);
+  s.acc ??= {};
+  const k = `${scope}.${key}.${cause}`;
+  s.acc[k] = (s.acc[k] || 0) + d;
+  if (Math.abs(s.acc[k]) >= 1) { why(s, scope, key, s.acc[k], cause); s.acc[k] = 0; }
+}
+// How the indicators push on each other. Every indicator feeds something the player feels.
+function systems(s) {
+  const n = s.nation, l = s.local, f = s.flags;
+  // Resource income raises government money; weak institutions let part of it leak; debt and foreign lenders take a cut.
+  const leak = n.inst < 50 ? (50 - n.inst) / 100 : 0;
+  const dGov = (n.resinc - 30) * 0.06 * (1 - leak) - (n.debt - 45) * 0.05 - (n.foreign - 45) * 0.02 + (rand(s) - 0.5);
+  slow(s, 'nation', 'gov', dGov, dGov >= 0 ? 'Resource income is filling the treasury' : 'Debt payments are draining the treasury');
+  // The resource curse: money in the treasury that never reaches people erodes trust.
+  if (n.resinc > 50 && leak > 0.1) slow(s, 'nation', 'trust', -0.4, 'Oil money rises but people see no change');
+  // Pollution makes people ill and damages farming and fishing.
+  if (l.env < 40) { slow(s, 'local', 'health', -0.5, 'Pollution is making people ill'); slow(s, 'local', 'food', -0.3, 'Polluted land and water cut food supply'); slow(s, 'local', 'jobs', -0.2, 'Fishing and farming are suffering'); }
+  if (n.env < 40) { slow(s, 'nation', 'health', -0.3, 'Pollution is making people ill'); slow(s, 'nation', 'food', -0.2, 'Polluted land and water cut food supply'); }
+  if (f.oilLive) { slow(s, 'local', 'env', f.oilSafeguards ? -0.15 : -0.6, 'Oil operations nearby'); slow(s, 'nation', 'env', -0.1, 'Oil operations'); }
+  // Stability follows how people live and whether they believe their leaders.
+  const dStab = (living(n) - 45) * 0.04 + (n.trust - 45) * 0.03 - (n.food < 35 ? 0.6 : 0) - (n.land < 35 ? 0.4 : 0) + (rand(s) - 0.5) * 0.8;
+  slow(s, 'nation', 'stab', dStab, dStab >= 0 ? 'Life is steady enough' : n.food < 35 ? 'Food is too expensive' : 'Anger is building');
+  // Foreign dependence slowly shrinks if the country earns for itself.
+  if (n.gov > 60 && n.debt < 50) slow(s, 'nation', 'foreign', -0.3, 'The country is paying its own way');
+}
 
 export function endQuarter(state) {
   const s = structuredClone(state);
@@ -275,8 +312,8 @@ export function endQuarter(state) {
   } else s.me.wealth += net;
   // Public budget refills, but unspent money lapses beyond two quarters' worth
   if (r.budget) {
-    const cap = r.budget * 2, nb = Math.min(cap, s.office.budget + r.budget);
-    if (s.office.budget + r.budget > cap) report.lines.push({ label: 'Unspent public funds lapsed', amt: -(s.office.budget + r.budget - cap), public: true });
+    const inflow = Math.round(r.budget * (0.6 + s.nation.gov / 125)), cap = r.budget * 2, nb = Math.min(cap, s.office.budget + inflow);
+    if (s.office.budget + inflow > cap) report.lines.push({ label: 'Unspent public funds lapsed', amt: -(s.office.budget + inflow - cap), public: true });
     s.office.budget = nb;
   }
   // Debts
@@ -291,13 +328,14 @@ export function endQuarter(state) {
 
   // Conditions drift: infrastructure decays unless maintained; the ward and nation pull on each other
   for (const k of SERVICES) {
-    const decay = k === 'power' || k === 'transport' ? 0.8 : 0.5;
+    const decay = DECAY[k] ?? 0.4;
     s.local[k] = clamp(s.local[k] - decay + (s.nation[k] - s.local[k]) * 0.05 + (rand(s) - 0.5) * 1.2);
     s.nation[k] = clamp(s.nation[k] + (s.local[k] - s.nation[k]) * 0.03 + (rand(s) - 0.5) * 1.4);
   }
   s.nation.debt = clamp(s.nation.debt + 0.3 + (rand(s) - 0.5) * 0.6);
   s.nation.trust = clamp(s.nation.trust + (rand(s) - 0.5) * 1.2);
   s.nation.inst = clamp(s.nation.inst + (rand(s) - 0.5) * 0.6);
+  systems(s);
   // People and party
   s.me.support = clamp(s.me.support + (avg(s.local) - 50) * 0.06 + (s.me.rep - 50) * 0.03 - 0.8);
   s.me.loyalty = clamp(s.me.loyalty - 1);
@@ -305,13 +343,13 @@ export function endQuarter(state) {
   if (s.flags.barred) { s.flags.barredSince ??= s.q; if (s.q - s.flags.barredSince >= 16) { delete s.flags.barred; delete s.flags.barredSince; } }
 
   // Probes: high exposure plus a functioning institution draws investigators
-  if (s.me.exposure >= 35 && !s.flags.probe && rand(s) < ((s.me.exposure - 25) / 110) * (0.6 + s.nation.inst / 100)) {
+  if (s.me.exposure >= 35 && !s.flags.probe && (s.seen.probe == null || s.q - s.seen.probe >= 12) && rand(s) < ((s.me.exposure - 25) / 110) * (0.6 + s.nation.inst / 100)) {
     s.flags.probe = true;
     s.queue.push({ due: s.q + 1, kind: 'event', id: 'probe' });
     note(s, 'ledger', 'Sources: Integrity Bureau "taking interest" in {name}\'s finances.', true);
     report.uncertain.push('Investigators are circling. Expect a letter soon.');
   }
-  if (s.rel.patron.o >= 70 && !s.queue.some(e => e.id === 'patron_calls') && !s.pending) s.queue.push({ due: s.q, kind: 'event', id: 'patron_calls' });
+  if (s.rel.patron.o >= 70 && !s.queue.some(e => e.id === 'patron_calls') && (s.seen.patron_calls == null || s.q - s.seen.patron_calls >= 8)) s.queue.push({ due: s.q, kind: 'event', id: 'patron_calls' });
 
   // Delayed consequences that are due
   const due = s.queue.filter(e => e.due <= s.q).sort((a, b) => a.due - b.due);
@@ -455,8 +493,11 @@ export function campaignPreview(s, alloc) {
     ['Handouts', 7 * eff(a.gifts, u)],
     ['Endorsements', (R.patron.t > 30 ? 6 : 0) + (R.market.t > 30 ? 3 : 0) + (R.youth.t > 30 ? 3 : 0) + (R.elders.t > 30 ? 3 : 0) - (f.patronEnemy ? 5 : 0)],
     ['Incumbency', inc ? 3 : 0],
+    ['Cost of living', ((t >= 5 ? s.nation.food : s.local.food) - 50) * 0.12],
+    ['Land & environment', (((t >= 5 ? s.nation.land : s.local.land) + (t >= 5 ? s.nation.env : s.local.env)) / 2 - 50) * 0.1 - (f.evicted ? 3 : 0) + (f.consulted ? 2 : 0) - (f.coverup ? 3 : 0)],
+    ['Unrest', (s.nation.stab - 50) * 0.08],
   ];
-  const you = 44 + factors.reduce((t, x) => t + x[1], 0);
+  const you = 46 + factors.reduce((t, x) => t + x[1], 0);
   const opp = 54 + 3 * t + (R.rival.t < -20 ? 3 : 0);
   return { factors: factors.map(([label, pts]) => ({ label, pts: Math.round(pts * 10) / 10 })), you, opp };
 }
@@ -517,7 +558,7 @@ export function legacy(s) {
   const score = Math.round(s.stats.peak * 12 + s.stats.wins * 6 + avg(s.nation) * 0.3 + s.me.rep * 0.2 - s.me.exposure * 0.2);
   const peak = ROLES[s.stats.peak].name;
   const verdict = score > 90 ? 'A towering career' : score > 55 ? 'A career people will argue about' : score > 25 ? 'A short chapter' : 'A footnote';
-  return { score, peak, verdict, wins: s.stats.wins, losses: s.stats.losses, years: Math.floor(s.q / 4) };
+  return { score, peak, verdict, wins: s.stats.wins, losses: s.stats.losses, years: Math.floor(s.q / 4), gap: wealthGap(s) };
 }
 
 // ---------------------------------------------------------------------------------------
@@ -538,6 +579,39 @@ export function objective(s) {
   if (cur < 2) bits.push(`Get a ${ROLES[2].name} ticket: ${t.status === 'secure' ? 'party backs you' : t.status === 'contested' ? 'contested; build party standing' : 'party standing too low'}`);
   else bits.push(`Hold your seat; ${nextUp > 0 ? `or aim for ${ROLES[nextUp].name}` : 'aim higher'}`);
   return { bits, ticket: t, race, q2e };
+}
+
+// "Rich country, rich government, rich politician, people doing well": four different things.
+export function wealthGap(s) {
+  const n = s.nation, people = living(n);
+  const you = clamp((Math.log10(Math.max(1e5, s.me.wealth)) - 5) * 20);
+  let verdict = 'A mixed picture: some things are up, some are down.';
+  if (n.gov >= 55 && people < 45) verdict = 'The government is flush, but ordinary people are struggling.';
+  else if (n.resinc >= 50 && people < 45) verdict = 'The country earns from its resources, but people do not feel it.';
+  else if (you >= 60 && people < 45) verdict = 'You are doing well. The country is not.';
+  else if (people >= 55 && n.gov < 40) verdict = 'People are doing better than the treasury suggests. Watch the debt.';
+  else if (people >= 55 && n.gov >= 50) verdict = 'A rare thing: a government and its people both doing well.';
+  return { gov: n.gov, resources: n.resinc, you, people, verdict };
+}
+
+export function playStyle(s) {
+  const owed = (s.rel.chair.o + s.rel.patron.o + s.rel.donor.o) / 3;
+  if (owed >= 30) return { name: 'Patronage builder', note: 'Powerful people backed you, and they remember.' };
+  if (s.me.wealth >= 5e6 && s.me.exposure >= 10) return { name: 'Deal-maker', note: 'Business connections open doors and raise questions.' };
+  if (s.me.rep >= 60 && s.me.exposure < 10) return { name: 'Public servant', note: 'Clean hands and a good name, but fewer powerful friends.' };
+  return { name: 'Pragmatist', note: 'You have not committed to a path yet.' };
+}
+
+export const band = (v, bad = false) => { const x = bad ? 100 - v : v; return x < 35 ? 'Low' : x < 60 ? 'Fair' : 'Good'; };
+
+export function indicatorInfo(s, scope, key) {
+  const src = scope === 'local' ? s.local : s.nation, bad = scope === 'nation' && NATION_BAD.has(key);
+  const v = Math.round(src[key]);
+  const [what, matters] = IND_INFO[key] || ['', ''];
+  return {
+    key, scope, label: IND[key], value: v, bad, band: bad ? (v >= 66 ? 'High' : v >= 40 ? 'Moderate' : 'Low') : band(v), what, matters,
+    history: s.why.filter(w => w.scope === scope && w.key === key).slice(0, 4).map(w => ({ ...w, when: when(w.q), good: (w.d > 0) !== bad })),
+  };
 }
 
 export const ladder = s => ROLES.map((r, i) => ({ i, name: r.name, here: i === s.office.role, passed: i < s.office.role }));

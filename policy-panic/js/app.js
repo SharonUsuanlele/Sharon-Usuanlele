@@ -1,7 +1,7 @@
 // Policy Panic UI. Renders engine state and routes taps to engine calls. No game rules live here.
 import * as E from './engine.js';
 import { N, IND, SERVICES, ROLES, REGIONS, ORIGINS, IDEOLOGIES, CAST, WANTS, SOURCES, PARTIES, MOVES, EVENTS } from './content.js';
-import { avatar, icon, scene, hero, SKINS, OUTFITS, STYLES } from './art.js';
+import { avatar, icon, scene, hero, countryScene, SKINS, OUTFITS, STYLES } from './art.js';
 
 const $app = document.getElementById('app'), $live = document.getElementById('live');
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -144,7 +144,7 @@ function viewPeople() {
   const pips = v => `<span class="sk">${[...Array(10)].map((_, i) => `<i class="${i < v ? 'on' : ''}"></i>`).join('')}</span>`;
   const t = E.ticketScore(s, s.office.role < 2 ? 2 : s.office.role);
   return frame(`<section class="paper you"><div class="preview">${avatar(s.player.look, 72)}<div><h2 class="serif">${esc(s.player.name)}</h2><p class="muted">${ORIGINS[s.player.origin].name} · ${IDEOLOGIES[s.player.ideology].name}</p></div></div>
-<div class="skills"><p>Organising ${pips(sk.org)}</p><p>Oratory ${pips(sk.speech)}</p><p>Finance ${pips(sk.fin)}</p></div></section>
+<p class="small"><b>${esc(E.playStyle(s).name)}.</b> ${esc(E.playStyle(s).note)}</p><div class="skills"><p>Organising ${pips(sk.org)}</p><p>Oratory ${pips(sk.speech)}</p><p>Finance ${pips(sk.fin)}</p></div></section>
 <section class="paper"><h3 class="h">${esc(PARTIES[s.player.party])}</h3>${meter('Your loyalty', s.me.loyalty, 'm-loy', 'loyalty')}<p class="small">Party ticket outlook: <b class="st-${t.status}">${t.status === 'secure' ? 'Secure' : t.status === 'contested' ? 'Contested' : 'Denied'}</b> <button class="q" data-act="help" data-k="ticket" aria-label="What is a ticket?">?</button></p></section>
 <h2 class="h sec">People who matter</h2>
 ${rels.map(id => { const c = CAST[id], r = s.rel[id]; return `<details class="person"><summary><span class="ini c${[...id].reduce((a, ch) => a + ch.charCodeAt(0), 0) % 5}">${c.name.replace(/^(Chief|Alhaji|Hon\.|Barr\.|Comrade|Pa|Dr\.) /, '')[0]}</span><span class="pn"><b>${c.name}</b><small>${c.role}</small></span><span class="tr ${r.t < -20 ? 'neg' : r.t > 20 ? 'pos' : ''}">${trustLabel(r.t)}</span>${r.o >= 15 ? `<em class="owed">You owe</em>` : ''}</summary>
@@ -159,24 +159,27 @@ function viewMoney() {
 ${w('w-green', 'Personal wealth', 'wealth', N(s.me.wealth), `<p>Next quarter: <b class="${net >= 0 ? 'pos' : 'neg'}">${net >= 0 ? '+' : ''}${N(net)}</b></p><small>Own income ${N(inc)} · salary ${N(r.salary)} · living costs ${N(-r.living)}</small>`)}
 ${w('w-yellow', 'Campaign funds', 'funds', N(s.me.funds), `<p>Only for elections. Raise more from the Life screen.</p>`)}
 ${w('w-blue', 'Public budget', 'budget', s.office.role >= 2 ? N(s.office.budget) : 'No office', s.office.role >= 2 ? `<p>Refills ${N(r.budget)} a quarter. Holds up to ${N(r.budget * 2)}; extra lapses.</p><small>This is the people's money. Spend it on the ward.</small>` : `<p>You hold no public funds yet. Win a seat to control a budget.</p>`)}
+<section class="paper"><h3 class="h sub">The country's money <small class="muted">(not yours)</small></h3>${meter('Government money', s.nation.gov, 'm-gov')}${meter('Resource income', s.nation.resinc, 'm-res')}${meter('Public debt (higher is worse)', s.nation.debt, 'bad')}<p class="muted small">Oil and gas can fill the treasury without making anyone's life better. What counts is where the money goes.</p></section>
 <section class="wallet w-red"><header><h3>Debts &amp; obligations</h3></header>
 ${s.debts.length ? s.debts.map(d => `<p class="line"><span>${esc(d.to)}</span><b>${N(d.amount)}</b><small>due ${E.when(d.dueQ)}</small></p>`).join('') : '<p class="muted">No debts.</p>'}
 ${owes.map(id => `<p class="line"><span>Favour owed to ${CAST[id].name}</span><b>${Math.round(s.rel[id].o)}/100</b></p>`).join('')}</section>
 ${s.ledger.length ? `<section class="paper"><h3 class="h">Last quarter</h3>${s.ledger.map(l => `<p class="line"><span>${esc(l.label)}</span><b class="${l.amt < 0 ? 'neg' : 'pos'}">${l.amt ? (l.amt > 0 ? '+' : '') + N(l.amt) : ''}</b></p>`).join('')}</section>` : ''}`);
 }
 
+const GROUPS_N = [['Money & outside influence', ['gov', 'resinc', 'debt', 'foreign']], ['How people live', E.SERVICES], ['The state of the nation', ['trust', 'stab', 'inst']]];
 function viewCountry() {
   const s = G, ward = REGIONS[s.player.region].ward, scope = U.scope, src = scope === 'local' ? s.local : s.nation;
-  const keys = scope === 'local' ? SERVICES : [...SERVICES, 'trust', 'inst', 'debt'];
+  const gap = E.wealthGap(s);
   const row = k => {
-    const v = Math.round(src[k]), w = s.why.find(x => x.scope === scope && x.key === k), bad = k === 'debt';
-    const c = bad ? cond(100 - v) : cond(v);
-    return `<div class="ind"><div class="mhead"><span>${IND[k]}${bad ? ' <small>(higher is worse)</small>' : ''}</span><b>${v}</b></div><div class="mbar ${c}" role="meter" aria-label="${IND[k]}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${v}"><i style="width:${v}%"></i></div>
-${w ? `<p class="why"><b class="${(w.d > 0) !== bad ? 'pos' : 'neg'}">${w.d > 0 ? '▲' : '▼'} ${sign(w.d)}</b> ${esc(w.cause)} (${E.when(w.q)})</p>` : ''}</div>`;
+    const i = E.indicatorInfo(s, scope, k), c = i.bad ? cond(100 - i.value) : cond(i.value), w = i.history[0];
+    return `<button class="ind" data-act="ind" data-scope="${scope}" data-k="${k}" aria-label="${esc(i.label)}: ${i.value}, ${i.band}. Tap for details"><div class="mhead"><span>${esc(i.label)}</span><span class="band b-${c}">${i.band}</span><b>${i.value}</b></div><div class="mbar ${c}" aria-hidden="true"><i style="width:${i.value}%"></i></div>${w ? `<p class="why"><b class="${w.good ? 'pos' : 'neg'}">${w.d > 0 ? '▲' : '▼'} ${sign(w.d)}</b> ${esc(w.cause)}</p>` : ''}</button>`;
   };
-  return frame(`<div class="seg" role="group" aria-label="Scope"><button data-act="scope" data-v="local" aria-pressed="${scope === 'local'}">${ward}</button><button data-act="scope" data-v="nation" aria-pressed="${scope === 'nation'}">The country</button></div>
-<section class="paper">${keys.map(row).join('')}</section>
-<p class="muted small">Without upkeep, roads and power slowly decay. Causes of recent changes appear under each bar.</p>
+  const who = (label, v, cls) => `<div class="who2"><span>${label}</span><div class="mbar ${cls}" role="meter" aria-label="${label}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(v)}"><i style="width:${Math.round(v)}%"></i></div><b>${Math.round(v)}</b></div>`;
+  return frame(`${countryScene({ ...src, trust: s.nation.trust, stab: s.nation.stab, oil: !!s.flags.oilLive })}
+<section class="paper gap"><h2 class="h sub big">Who is actually doing well?</h2>${who('The government', gap.gov, 'g-gov')}${who('Resource income', gap.resources, 'g-res')}${who('You, personally', gap.you, 'g-you')}${who('Ordinary people', gap.people, 'g-ppl')}<p class="serif verdict">${esc(gap.verdict)}</p></section>
+<div class="seg" role="group" aria-label="Scope"><button data-act="scope" data-v="local" aria-pressed="${scope === 'local'}">${ward}</button><button data-act="scope" data-v="nation" aria-pressed="${scope === 'nation'}">The country</button></div>
+<p class="muted small">Tap any line to see why it changed.</p>
+${scope === 'local' ? `<section class="paper"><h3 class="h sub">How people live in ${ward}</h3>${E.SERVICES.map(row).join('')}</section>` : GROUPS_N.map(([t, ks]) => `<section class="paper"><h3 class="h sub">${t}</h3>${ks.map(row).join('')}</section>`).join('')}
 <section class="note"><b>Offline world.</b> The country here is simulated on your device. A real shared world needs a server so other players' choices can change it. See docs/DESIGN.md.</section>`);
 }
 
@@ -255,7 +258,7 @@ ${r.uncertain?.length ? `<section class="unsure"><h3 class="h sub">Not confirmed
 
 function viewEnding() {
   const l = E.legacy(G);
-  return `<main id="main" tabindex="-1" class="pad end"><span class="kick">The end of a career</span><h1 class="h big">${esc(G.player.name)}</h1><section class="paper pop"><h2 class="serif">${l.verdict}</h2><p>You served ${l.years} years. Highest office: <b>${l.peak}</b>. Elections won: ${l.wins}. Lost: ${l.losses}.</p><p class="muted">Legacy score ${l.score}</p></section>
+  return `<main id="main" tabindex="-1" class="pad end"><span class="kick">The end of a career</span><h1 class="h big">${esc(G.player.name)}</h1><section class="paper pop"><h2 class="serif">${l.verdict}</h2><p>You served ${l.years} years. Highest office: <b>${l.peak}</b>. Elections won: ${l.wins}. Lost: ${l.losses}.</p><p class="serif">${esc(l.gap.verdict)}</p><p class="muted">Legacy score ${l.score}</p></section>
 <button class="btn primary big" data-act="new">Start a new career</button><button class="btn" data-act="title">Main menu</button></main>`;
 }
 
@@ -277,6 +280,9 @@ ${U.io !== '' ? `<textarea id="io" class="field" rows="4" aria-label="Backup cod
     const s = G;
     body = `<h2 class="h" id="sh">Your situation</h2><div class="wallets"><div class="w w-green"><span>Wealth</span><b>${N(s.me.wealth)}</b></div><div class="w w-yellow"><span>Campaign</span><b>${N(s.me.funds)}</b></div><div class="w w-blue"><span>Public</span><b>${s.office.role >= 2 ? N(s.office.budget) : '—'}</b></div></div>
 ${meter('Public support', s.me.support, 'm-sup')}${meter('Influence', s.me.influence, 'm-inf')}${meter('Party loyalty', s.me.loyalty, 'm-loy')}${meter('Legal exposure', s.me.exposure, 'm-heat')}`;
+  } else if (k.startsWith('ind:')) {
+    const [, sc, key] = k.split(':'), i = E.indicatorInfo(G, sc, key);
+    body = `<h2 class="h" id="sh">${esc(i.label)}</h2><p class="big-n"><b>${i.value}</b> <span class="band b-${i.bad ? cond(100 - i.value) : cond(i.value)}">${i.band}</span></p><p>${esc(i.what)}</p><p><b>Why it matters:</b> ${esc(i.matters)}</p><h3 class="h sub">What changed lately</h3>${i.history.length ? `<ul class="chg">${i.history.map(h => `<li><span>${esc(h.cause)} <small>(${h.when})</small></span><b class="${h.good ? 'pos' : 'neg'}">${h.d > 0 ? '▲' : '▼'} ${sign(h.d)}</b></li>`).join('')}</ul>` : '<p class="muted">No recent change. Without upkeep, roads, power and food supply slowly slip.</p>'}`;
   } else if (HELP[k.slice(5)]) { const [t, d] = HELP[k.slice(5)]; body = `<h2 class="h" id="sh">${t}</h2><p>${d}</p>`; }
   return `<div class="scrim" data-act="close-sheet"></div><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sh">${body}<button class="btn primary" data-act="close-sheet">Done</button></div>`;
 }
@@ -339,6 +345,7 @@ const ACT = {
   start() { const c = U.create; G = E.newGame({ ...c, name: c.name }); persist(); U.tab = 'life'; U.ref = { event: G.pending.id }; history.replaceState({ tab: 'life' }, '', '#life'); go('decision'); },
   tab(d) { U.tab = d.tab; history.pushState({ tab: d.tab }, '', '#' + d.tab); U.sheet = null; if (U.screen !== 'main') U.screen = 'main'; render(); },
   scope(d) { U.scope = d.v; render(); },
+  ind(d) { U.sheet = `ind:${d.scope}:${d.k}`; render(); },
   cta() { const p = G.pending; if (p?.kind === 'decision') { U.ref = { event: p.id }; go('decision'); } else if (p?.kind === 'election') { U.alloc = { media: 0, agents: 0, gifts: 0 }; go('election'); } else commit(E.endQuarter(G)); tone(330); },
   move(d) { if (G.movesLeft <= 0) return toast('No moves left this quarter.'); U.ref = { move: d.id }; go('decision'); },
   cancel() { go('main'); },
